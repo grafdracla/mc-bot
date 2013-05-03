@@ -353,7 +353,8 @@ const
                    // 59     13w09a
                    // 60     13w09c
                    // 61
-  cProtVerMax: Byte = 62; // 13w16a
+                   // 62     13w16a
+  cProtVerMax: Byte = 65; // 13w18b
 
 function GetTickDiff(const AOldTickCount, ANewTickCount: LongWord): LongWord;
 {$IFDEF USE_INLINE}inline; {$ENDIF}
