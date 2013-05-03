@@ -159,6 +159,20 @@
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
 					<Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfs16.bpl">FastScript 1.9 Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrx16.bpl">FastReport 4.0 Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfsDB16.bpl">FastScript 1.9 DB Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxDB16.bpl">FastReport 4.0 DB Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfsbde16.bpl">FastScript 1.9 BDE Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxbde16.bpl">FastReport 4.0 BDE Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfsado16.bpl">FastScript 1.9 ADO Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxado16.bpl">FastReport 4.0 ADO Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfsibx16.bpl">FastScript 1.9 IBX Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxibx16.bpl">FastReport 4.0 IBX Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxdbx16.bpl">FastReport 4.0 DBX Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxe16.bpl">FastReport 4.0 Exports</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfstee16.bpl">FastScript 1.9 Tee Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxtee16.bpl">(untitled)</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\dcloffice2k160.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
 						<Excluded_Packages Name="$(BDSBIN)\dclofficexp160.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
 					</Excluded_Packages>
@@ -173,3 +187,9 @@
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
 		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
 	</Project>
+
+<!-- EurekaLog First Line
+[Exception Log]
+EurekaLog Version=7001
+DeleteMapAfterCompile=1
+EurekaLog Last Line -->
