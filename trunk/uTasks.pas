@@ -75,21 +75,26 @@ var
 begin
   Data := Task.GetInfo;
   fJSON := TlkJSON.ParseText( Data );
+  try
 
-  fJSON := fJSON.Field['events'];
-  if fJSON <> nil then
-    for i := 0 to fJSON.Count-1 do begin
-      fKey := fJSON.Child[i].Value;
+    fJSON := fJSON.Field['events'];
+    if fJSON <> nil then
+      for i := 0 to fJSON.Count-1 do begin
+        fKey := fJSON.Child[i].Value;
 
-      // Get list
-      if not fEvents.TryGetValue( fKey, fList ) then begin
-        // New list
-        fList := TList<ITask>.Create;
-        fEvents.Add( fKey, fList );
+        // Get list
+        if not fEvents.TryGetValue( fKey, fList ) then begin
+          // New list
+          fList := TList<ITask>.Create;
+          fEvents.Add( fKey, fList );
+        end;
+
+        fList.Add(Task);
       end;
 
-      fList.Add(Task);
-    end;
+  finally
+    fJSON.Free;
+  end;
 
   inherited Add(Task);
 end;

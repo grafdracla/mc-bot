@@ -24,7 +24,7 @@ type
 
     procedure Event(Name, Data:string);
 
-    procedure ChatMessage(msg:string);
+    procedure ChatMessage(MType, From, Text:string);
   end;
 
 implementation
@@ -84,41 +84,31 @@ begin
   end;
 end;
 
-procedure TWork_Goto.ChatMessage(msg: string);
+procedure TWork_Goto.ChatMessage(MType, From, Text: string);
 var
-  fUser:string;
   fCmd:string;
   fPlayer:IPlayer;
   fTarget:IEntity;
-
-  str:string;
   fPos:TPos;
+  str:string;
 begin
   // Test whispers
-  if trim( lowercase( ExtractWord(2, msg, [' ']) ) ) <> 'whispers' then exit;
+  if MType <> 'commands.message.display.incoming' then exit;
 
   // Test user
-  fUser := ExtractWord(1, msg, [' ']);
-  case fClient.GetUserGroup(fUser) of
+  case fClient.GetUserGroup(From) of
     ugAdmin:;
     else
       exit;
   end;
 
-  // Patch 1.5
-  if ExtractWord(3, msg, [' ']) = 'to' then
-    msg := trim( lowercase( Copy(msg, WordPosition(2, msg, [':']), Length(msg)) ) )
-
-  else
-    msg := trim( lowercase( Copy(msg, WordPosition(3, msg, [' ']), Length(msg)) ) );
-
   // Test command
-  if lowercase( ExtractWord(1, msg, [' ']) ) <> 'goto' then Exit;
+  if lowercase( ExtractWord(1, Text, [' ']) ) <> 'goto' then Exit;
 
-  fCmd := ExtractWord(2, msg, [' ']);
+  fCmd := ExtractWord(2, Text, [' ']);
   if fCmd = 'me' then begin
     // Find player
-    fPlayer := fClient.GetPlayer( fUser );
+    fPlayer := fClient.GetPlayer( From );
     if fPlayer = nil then begin
       fPlayer := nil;
       exit;
@@ -152,7 +142,7 @@ begin
   end
   else if fCmd = 'place' then begin
     str := '{'+
-        '"place":"'+ExtractWord(3, msg, [' '])+'"'+
+        '"place":"'+ExtractWord(3, Text, [' '])+'"'+
       '}';
   end
   else

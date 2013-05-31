@@ -54,6 +54,7 @@ const
   cmdEntityEffect         = $29;        //  S
   cmdRemoveEntityEffect   = $2A;        //  S
   cmdSetExperience        = $2B;        //  S
+  cmdEntityProperties     = $2C;        //  S
   cmdMapColumnAllocation  = $32;        //  S   -39     No nide
   cmdMapChunks            = $33;        //  S
   cmdMultiBlockChange     = $34;        //  S
@@ -272,6 +273,9 @@ begin
 
     cmdSetExperience:
       result := 'Set Experience';
+
+    cmdEntityProperties:
+      result := 'Entity Properties';
 
     cmdMapColumnAllocation:
       result := 'Map Column Allocation';

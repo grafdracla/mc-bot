@@ -123,6 +123,7 @@ type
     procedure c29_EntityEffect();
     procedure c2A_RemoveEntityEffect();
     procedure c2B_SetExperience();
+    procedure c2C_EntityProperties();
     procedure c32_MapColumnAllocation();
     procedure c33_MapChunks();
     procedure c34_MultiBlockChange();
@@ -328,8 +329,10 @@ uses
   Variants,
   ZLib,
   //ZLibExGZ,
+  uLkJSON,
 
   qSysUtils,
+  qStrUtils,
   // Wcrypt2,
   // IdSSLOpenSSL,
 
@@ -354,7 +357,8 @@ const
                    // 60     13w09c
                    // 61
                    // 62     13w16a
-  cProtVerMax: Byte = 65; // 13w18b
+                   // 65     13w18b
+  cProtVerMax: Byte = 67; // 13w22a
 
 function GetTickDiff(const AOldTickCount, ANewTickCount: LongWord): LongWord;
 {$IFDEF USE_INLINE}inline; {$ENDIF}
@@ -1289,6 +1293,9 @@ begin
         cmdSetExperience:
           c2B_SetExperience();
 
+        cmdEntityProperties:
+          c2C_EntityProperties();
+
         cmdMapColumnAllocation:
           c32_MapColumnAllocation();
 
@@ -1933,9 +1940,9 @@ begin
     // Action
     fTCPClient.Socket.Write(Action);
 
-    // Unknown
+    // Leash
     if fServerVer > 60 then
-      fTCPClient.Socket.Write(Unknown);
+      fTCPClient.Socket.Write( Unknown );
   except
   end;
 end;
@@ -2033,31 +2040,100 @@ end;
 
 procedure TClient.c03_ChatMessage;
 var
-  str: string;
-  i:Integer;
-
+  str, sub, fType, fFrom, fText, fMark: string;
+  i, fLevel:Integer;
+  fJSON, fUsing, fValue:TlkJSONbase;
   fTask:ITask;
   fTaskEventChat:ITaskEventChat;
 begin
   str := ReadString();
 
-  // Cut special
-  while true do begin
-    i := Pos('§', str);
-    if i = 0 then break;
+  if fServerVer >= 67 then begin
+    fJSON := TlkJSON.ParseText( str );
+    try
+      // Type
+      fType := fJSON.Field['translate'].Value;
 
-    str := Copy(str, 1, i-1) + Copy(str, i+2, Length(str));
+      fUsing := fJSON.Field['using'];
+
+      // From
+      fFrom := fUsing.Child[0].Value;
+
+      fValue := fUsing.Child[1];
+
+      // Text
+      if fValue.Count = 0 then
+        fText := fValue.Value
+
+      else
+        fText := GenerateReadableText( fValue, fLevel );
+
+    finally
+      fJSON.Free;
+    end;
+  end
+  else begin
+    fType := 'chat.type.announcement';
+    fFrom := '';
+    fText := str;
+
+    // Cut special
+    while true do begin
+      i := Pos('§', fText);
+      if i = 0 then break;
+
+      fText := Copy(fText, 1, i-1) + Copy(fText, i+2, Length(fText));
+    end;
+
+    fMark := Copy(fText, 1, 1);
+    // Server
+    if fMark = '[' then begin
+      fType := 'chat.type.admin';
+      fFrom := ExtractWord(1, fText, ['[',']']);
+
+      // In []
+      if ExtractWord(2, fFrom, [':']) <> '' then begin
+        sub := fFrom;
+
+        fFrom := ExtractWord(1, sub, [':', '"']);
+
+        // End text
+        fText := trim( Copy(fText, Pos(']', fText)+1, Length(fText)) );
+
+        // Text in service
+        fText := trim( Copy(sub, Pos(':', sub)+1, Length(sub)) ) + trim(' ' +fText);
+      end
+      else
+        fText := trim( Copy(fText, Pos(']', fText)+1, Length(fText)) );
+    end
+    // User
+    else if fMark = '<' then begin
+      fType := 'chat.type.announcement';
+      fFrom := ExtractWord(1, fText, ['<','>']);
+      fText := trim( Copy(fText, Pos('>', fText)+1, Length(fText)) );
+    end;
+
+    // Whispers
+    if trim( lowercase( ExtractWord(2, fText, [' ']) ) ) = 'whispers' then begin
+      fType := 'commands.message.display.incoming';
+      fFrom := ExtractWord(1, fText, [' ']);
+      fText := trim( Copy(fText, WordPosition(3, fText, [' ']), Length(fText)) );
+
+      //# patch 1.5
+      if Copy(fText, 1, 7) = 'to you:' then
+        fText := Trim( Copy(fText, 8, Length(fText)) );
+    end;
   end;
 
   // Log event
-  AddLog('#' + GetCmdName(cmdChatMessage) + ': ' + str);
+  AddLog('#' + GetCmdName(cmdChatMessage) + ': ' + fType+ '|'+fFrom+'|'+fText);
 
   // Tasks event
   for i := 0 to fTasks.Count-1 do begin
     fTask := fTasks.Items[i];
 
     if fTask.QueryInterface( ITaskEventChat, fTaskEventChat ) = S_OK then
-      fTaskEventChat.ChatMessage( str );
+      fTaskEventChat.ChatMessage( fType, fFrom, fText );
   end;
 end;
 
@@ -3308,6 +3384,49 @@ begin
 {$ENDIF}
 end;
 
+procedure TClient.c2C_EntityProperties();
+var
+  fEId {, fDW}: LongWord;
+  fEntity: IEntity;
+  fCount, i: Integer;
+  fKey:string;
+begin
+  if fServerVer < 67 then
+    raise Exception.Create('#Invalid command in this version :' + GetSteck() );
+
+  fLock.Enter;
+  try
+    // Entity ID
+    fEId := fIOHandler.ReadLongWord();
+
+    if not Entitys.TryGetValue(fEId, fEntity) then begin
+      fEntity := TEntity.Create;
+      Entitys.Add( fEId, fEntity );
+    end;
+
+    // Count
+    fCount := fIOHandler.ReadLongInt();
+
+    for i := 0 to fCount-1 do begin
+      // Key
+      fKey := ReadString();
+
+      // val1
+      {fDW :=} fIOHandler.ReadLongWord();
+
+      // Cal2
+      {fDW :=} fIOHandler.ReadLongWord();
+    end;
+
+  finally
+    fLock.Leave;
+  end;
+
+{$IFDEF SHOW_SERVERCMD_ALL}
+  AddLog( '#' + GetCmdName(cmdEntityProperties);
+{$ENDIF}
+end;
+
 procedure TClient.c32_MapColumnAllocation();
 begin
   if fServerVer >= 39 then
@@ -4464,9 +4583,11 @@ begin
 
       // Flying speed
       fIOHandler.ReadLongWord();
+      //@@@ - Float
 
       // Walking speed
       fIOHandler.ReadLongWord();
+      //@@@ - Float
     end;
     // 1.3 - 1.5
     39..60:begin

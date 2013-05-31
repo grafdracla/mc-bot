@@ -35,7 +35,7 @@ type
     procedure SpawnEntity(Entity:IEntity);
     procedure DestroyEntity(Entity:IEntity);
 
-    procedure ChatMessage(msg:string);
+    procedure ChatMessage(MType, From, Text:string);
   end;
 
 implementation
@@ -160,37 +160,27 @@ begin
   fTargetLastPos := fPos;
 end;
 
-procedure TWork_GoWithMe.ChatMessage(msg: string);
-var
-  fUser:string;
+procedure TWork_GoWithMe.ChatMessage(MType, From, Text: string);
 begin
   // Test whispers
-  if lowercase( ExtractWord(2, msg, [' ']) ) <> 'whispers' then exit;
+  if MType <> 'commands.message.display.incoming' then exit;
 
   // Test user
-  fUser := ExtractWord(1, msg, [' ']);
-  case fClient.GetUserGroup(fUser) of
+  case fClient.GetUserGroup(From) of
     ugAdmin:;
     else
       exit;
   end;
 
-  // Patch 1.5
-  if ExtractWord(3, msg, [' ']) = 'to' then
-    msg := trim( lowercase( Copy(msg, WordPosition(2, msg, [':']), Length(msg)) ) )
-
-  else
-    msg := trim( lowercase( Copy(msg, WordPosition(3, msg, [' ']), Length(msg)) ) );
-
   // Test command
-  if msg = 'come with me' then begin
+  if Text = 'come with me' then begin
     // Set state
     fLastState := fState;
     fClient.SendEvent('state', 'work.gowithme');
 
     fTime.Enabled := true;
   end
-  else if msg = 'stay here' then begin
+  else if Text = 'stay here' then begin
     fTarget := nil;
     fTime.Enabled := false;
 
