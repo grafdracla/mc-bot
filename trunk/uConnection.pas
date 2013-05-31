@@ -3,6 +3,7 @@ unit uConnection;
 interface
 
 //{$DEFINE SHOW_SERVERCMD_ALL}
+//{$DEFINE OpenSSL}
 
 uses
   System.Classes, ExtCtrls,
@@ -333,6 +334,9 @@ uses
 
   qSysUtils,
   qStrUtils,
+  {$IFDEF OpenSSL}
+    libeay32,
+  {$ENDIF}
   // Wcrypt2,
   // IdSSLOpenSSL,
 
@@ -355,10 +359,21 @@ const
                    // 58     13w06a
                    // 59     13w09a
                    // 60     13w09c
-                   // 61
+                   // 61     1.5.2
                    // 62     13w16a
                    // 65     13w18b
   cProtVerMax: Byte = 67; // 13w22a
+
+{$IFDEF OpenSSL}
+function GetError(ErrMsg:pBIO):string;
+var
+  buff: array [0..1023] of AnsiChar;
+begin
+  BIO_reset(ErrMsg);
+  BIO_read(ErrMsg, @buff, 1024);
+  result := buff;
+end;
+{$ENDIF}
 
 function GetTickDiff(const AOldTickCount, ANewTickCount: LongWord): LongWord;
 {$IFDEF USE_INLINE}inline; {$ENDIF}
@@ -707,7 +722,7 @@ begin
   fTCPClient.Socket.Write(w);
 
   // Data
-  fTCPClient.Socket.Write(str, TEncoding.BigEndianUnicode);
+  fTCPClient.Socket.Write(str, SysUtils.TEncoding.BigEndianUnicode);
 end;
 
 procedure TClient.Digging(Pos:TAbsPos; Status, Face: Byte);
@@ -1719,7 +1734,7 @@ begin
       IOHandler := fTCPClient.IOHandler;
 
     fLen := IOHandler.ReadWord();
-    Result := IOHandler.ReadString(fLen * 2, TEncoding.BigEndianUnicode);
+    Result := IOHandler.ReadString(fLen * 2, SysUtils.TEncoding.BigEndianUnicode);
   except
     Result := '-Error-';
   end;
@@ -1941,7 +1956,7 @@ begin
     fTCPClient.Socket.Write(Action);
 
     // Leash
-    if fServerVer > 60 then
+    if fServerVer >= 62 then
       fTCPClient.Socket.Write( Unknown );
   except
   end;
@@ -2225,7 +2240,7 @@ begin
     SpawnPosition.X := fIOHandler.ReadLongInt();
 
     // Y
-    SpawnPosition.X := fIOHandler.ReadLongInt();
+    SpawnPosition.Y := fIOHandler.ReadLongInt();
 
     // Z
     SpawnPosition.Z := fIOHandler.ReadLongInt();
@@ -2248,7 +2263,7 @@ begin
   fLock.Enter;
   try
     // Health
-    if fServerVer > 60 then begin
+    if fServerVer >= 62 then begin
       fDW := fIOHandler.ReadLongWord();
       Health := PSingle( @fDW )^;
     end
@@ -3253,7 +3268,7 @@ begin
     fEntity.AttachVehile := fIOHandler.ReadLongWord();
 
     // Leashe
-    if fServerVer > 60 then
+    if fServerVer >= 62 then
       fEntity.Leashe := fIOHandler.ReadByte <> 0;
 
   finally
@@ -3423,7 +3438,7 @@ begin
   end;
 
 {$IFDEF SHOW_SERVERCMD_ALL}
-  AddLog( '#' + GetCmdName(cmdEntityProperties);
+  AddLog( '#' + GetCmdName(cmdEntityProperties) );
 {$ENDIF}
 end;
 
@@ -4576,8 +4591,8 @@ end;
 procedure TClient.cCA_PlayerAbilities;
 begin
   case fServerVer of
-    // 1.6
-    61..MaxByte:begin
+    // 13w16a
+    62..MaxByte:begin
       // Flags
       fIOHandler.ReadByte();
 
@@ -4590,7 +4605,7 @@ begin
       //@@@ - Float
     end;
     // 1.3 - 1.5
-    39..60:begin
+    39..61:begin
       // Flags
       fIOHandler.ReadByte();
 
@@ -4764,14 +4779,19 @@ begin
 end;
 
 procedure TClient.cFD_EncryptionKeyRequest;
-const
-  RSA1024BIT_KEY = $04000000;
+{const
+  RSA1024BIT_KEY = $04000000;}
 var
   ServerId: string;
   fPublicKeyLength, { fSharedKeyLength, } fVerifyTokenLength: SmallInt;
   fPublicKey, { fSharedKey, } fVerifyToken: TBytes;
 
   b: Byte;
+
+  {$IFDEF OpenSSL}
+    rsa: pRSA;
+    ErrMsg: pBIO;
+  {$ENDIF}
 
   { RSA: HCRYPTPROV;
     MyKey: HCRYPTKEY; }
@@ -4804,6 +4824,30 @@ begin
     raise Exception.Create('Not ended :'+GetSteck());
 
   // --------------------------------------------------------------------------
+  {$IFDEF OpenSSL}
+     rsa := nil;
+//     PrivateKeyOut := nil;
+//     PublicKeyOut := nil;
+     try
+       rsa := RSA_generate_key(1024, RSA_F4, nil, ErrMsg);
+       if rsa = nil then
+         raise Exception.Create( GetError(ErrMsg) );
+{
+       PrivateKeyOut := BIO_new( BIO_s_file() );
+
+       BIO_write_filename(PrivateKeyOut, 'd:\private.key');
+       PublicKeyOut := BIO_new(BIO_s_file());
+       BIO_write_filename(PublicKeyOut, 'd:\public.key');
+
+       PEM_write_bio_RSAPrivateKey(PrivateKeyOut, rsa, enc, nil, 0, nil, PChar(fPassword));
+       PEM_write_bio_RSAPublicKey(PublicKeyOut, rsa);}
+     finally
+       if rsa <> nil then RSA_free(rsa);
+       {if PrivateKeyOut <> nil then BIO_free_all(PrivateKeyOut);
+       if PublicKeyOut <> nil then BIO_free_all(PublicKeyOut);}
+     end;
+  {$ENDIF}
+
   { // Cmd
     fTCPClient.Socket.Write(cmdEncryptionKeyResponse);
 
@@ -5076,5 +5120,13 @@ function TClientInt.GetBlockInfo(BlockId:Integer):IBlockInfo;
 begin
   result := BloksInfos.GetInfo( BlockId );
 end;
+
+initialization
+  {$IFDEF OpenSSL}
+    OpenSSL_add_all_algorithms;
+    OpenSSL_add_all_ciphers;
+    OpenSSL_add_all_digests;
+    ERR_load_crypto_strings;
+  {$ENDIF}
 
 end.
