@@ -19,10 +19,13 @@ type
 
     procedure Event(Name, Data:string);
 
-    procedure ChatMessage(msg:string);
+    procedure ChatMessage(MType, From, Text:string);
   end;
 
 implementation
+
+uses
+  SysUtils;
 
 { TSys_Login }
 
@@ -53,9 +56,9 @@ begin
   //
 end;
 
-procedure TSys_Login.ChatMessage(msg: string);
+procedure TSys_Login.ChatMessage(MType, From, Text: string);
 begin
-  if Pos('/login', msg) <> 0 then
+  if Pos('/login', Text) <> 0 then
     fClient.SendChatMsg('/login ' + UserPass);
 end;
 

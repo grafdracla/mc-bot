@@ -39,7 +39,7 @@ type
     procedure Event(Name, Data:string);
 
     // Chat
-    procedure ChatMessage(msg:string);
+    procedure ChatMessage(MType, From, Text:string);
 
     // Window
     procedure OpenWindow(WID:Byte);
@@ -230,39 +230,31 @@ begin
   end;
 end;
 
-procedure TWork_Feller.ChatMessage(msg: string);
+procedure TWork_Feller.ChatMessage(MType, From, Text: string);
 var
-  fUser, fCmd:string;
+  fCmd:string;
 begin
   // Test whispers
-  if lowercase( ExtractWord(2, msg, [' ']) ) <> 'whispers' then exit;
+  if MType <> 'commands.message.display.incoming' then exit;
 
   // Test user
-  fUser := ExtractWord(1, msg, [' ']);
-  case fClient.GetUserGroup(fUser) of
+  case fClient.GetUserGroup(From) of
     ugAdmin:;
     else
       exit;
   end;
 
-  // Patch 1.5
-  if ExtractWord(3, msg, [' ']) = 'to' then
-    msg := trim( lowercase( Copy(msg, WordPosition(2, msg, [':']), Length(msg)) ) )
-
-  else
-    msg := trim( lowercase( Copy(msg, WordPosition(3, msg, [' ']), Length(msg)) ) );
-
   // Test command
-  fCmd := lowercase( ExtractWord(1, msg, [' ']) );
+  fCmd := lowercase( ExtractWord(1, Text, [' ']) );
   if fCmd <> 'work' then exit;
 
-  fCmd := lowercase( ExtractWord(2, msg, [' ']) );
+  fCmd := lowercase( ExtractWord(2, Text, [' ']) );
   if fCmd <> 'feller' then exit;
 
   if fThread <> nil then exit;
 
   //==== Start work ====
-  fClient.SendEvent('state', 'work.feller');  
+  fClient.SendEvent('state', 'work.feller');
 end;
 
 { TWork_Feller_thread }

@@ -264,7 +264,7 @@ type
   ITaskEventChat = interface
     ['{861064EE-3576-4905-A9DF-6494D129E6CE}']
 
-    procedure ChatMessage(msg:string);
+    procedure ChatMessage(MType, From, Text:string);
   end;
 
   ITaskEventEntity = interface
