@@ -10,7 +10,7 @@ uses
   SysUtils, Generics.Collections,
   SyncObjs, IniFiles,
 
-  IdTCPClient, IdIOHandler, IdComponent, IdLogBase, IdGlobal,
+  IdTCPClient, IdIOHandler, IdSSLOpenSSL, IdComponent, IdLogBase, IdGlobal,
 
   mcConsts, mcTypes, uEntity, uPlayer, uChunk, uWind, uPlugins, uTasks;
 
@@ -28,6 +28,7 @@ type
 
     fIOHandler: TIdIOHandler;
     fTCPClient: TIdTCPClient;
+    fSSL:TIdSSLIOHandlerSocketOpenSSL;
 
     fReconect: TTimer;
     fKeepAlive: TTimer;
@@ -332,6 +333,8 @@ uses
   //ZLibExGZ,
   uLkJSON,
 
+  IdHashSHA,
+
   qSysUtils,
   qStrUtils,
   {$IFDEF OpenSSL}
@@ -362,18 +365,59 @@ const
                    // 61     1.5.2
                    // 62     13w16a
                    // 65     13w18b
-  cProtVerMax: Byte = 67; // 13w22a
+                   // 67     13w22a
+  cProtVerMax: Byte = 68; // 13w23b
 
-{$IFDEF OpenSSL}
-function GetError(ErrMsg:pBIO):string;
+function mcHexDigest(strm:TStream):string;
+
+  procedure performTwosCompliment(var buffer:TIdBytes);
+  var
+    carry:Boolean;
+    i:Integer;
+    newByte, value:Byte;
+  begin
+    carry := true;
+
+    for i := Length(buffer)-1 downto 0 do begin
+      value := buffer[i];
+      newByte := byte(not value);
+      if carry then begin
+        carry := newByte = $FF;
+        buffer[i] := newByte + 1;
+      end
+      else
+        buffer[i] := newByte;
+    end;
+  end;
+
 var
-  buff: array [0..1023] of AnsiChar;
+  fSHA1:TIdHashSHA1;
+  fHash:TIdBytes;
+  negative:boolean;
+  i:Integer;
 begin
-  BIO_reset(ErrMsg);
-  BIO_read(ErrMsg, @buff, 1024);
-  result := buff;
+  fSHA1 := TIdHashSHA1.Create;
+  try
+    fHash := fSHA1.HashStream(strm);
+
+    // check for negative hashes
+    negative := ShortInt(fHash[0]) < 0;
+
+    if negative then
+      performTwosCompliment(fhash);
+
+    result := IntToHex(fhash[0], 1);
+    for i := 1 to Length(fhash)-1 do
+      result := result + IntToHex(fhash[i], 2);
+
+    if negative then
+      result := '-' + result;
+
+    result := lowercase(result);
+  finally
+    fSHA1.Free;
+  end;
 end;
-{$ENDIF}
 
 function GetTickDiff(const AOldTickCount, ANewTickCount: LongWord): LongWord;
 {$IFDEF USE_INLINE}inline; {$ENDIF}
@@ -474,6 +518,8 @@ begin
   fTCPClient.OnStatus := DoStatus;
 
   fIOHandler := nil;
+
+  fSSL := nil;
 
   fLock := TCriticalSection.Create;
 
@@ -4779,30 +4825,90 @@ begin
 end;
 
 procedure TClient.cFD_EncryptionKeyRequest;
-{const
-  RSA1024BIT_KEY = $04000000;}
+
+{$IFDEF MSCrypt}
+  {
+    RSA: HCRYPTPROV;
+    MyKey: HCRYPTKEY;
+
+    // Open seq
+    if not CryptAcquireContext(@RSA, 'myKey', nil, PROV_RSA_FULL, CRYPT_NEWKEYSET) then
+    raise Exception.Create('CryptAcquireContext');
+
+    // Generate key pair
+    if not CryptGenKey(RSA, CALG_RSA_KEYX, RSA1024BIT_KEY or CRYPT_EXPORTABLE, @MyKey) then
+    raise Exception.Create('CryptGenKey'); }
+
+  { if not CryptImportKey(RSA, fPublicKey, fPublicKeyLength, 0, 0, @HPair) then
+    raise Exception.Create('CryptAcquireContext'); }
+{$ENDIF}
+
+{$IFDEF OpenSSL}
+  //========= OpenSSL =====================
+var
+  rsa: pRSA;
+
+  function GetError(ErrMsg:pBIO):string;
+  var
+    buff: array [0..1023] of AnsiChar;
+  begin
+    BIO_reset(ErrMsg);
+    BIO_read(ErrMsg, @buff, 1024);
+    result := string(buff);
+  end;
+
+  function Seq_Init():boolean;
+  begin
+    rsa := nil;
+
+    result := true;
+  end;
+
+  procedure Seq_Final();
+  begin
+    if rsa <> nil then RSA_free(rsa);
+  end;
+
+  procedure Seq_InportPublicKey();
+  var
+    keyfile: pBIO;
+  begin
+    keyfile := BIO_new(BIO_s_mem());
+
+    pKey := nil;
+    PEM_read_bio_RSAPublicKey(keyfile, nil, nil, );
+  end;
+
+  procedure Seq_GenerateKey();
+  {var
+    ErrMsg: pBIO;
+  }
+  begin
+    {  ErrMsg := nil;
+
+     rsa := RSA_generate_key(1024, RSA_F4, nil, ErrMsg);
+     if rsa = nil then
+       raise Exception.Create( GetError(ErrMsg) );}
+  end;
+{$ENDIF}
+
 var
   ServerId: string;
-  fPublicKeyLength, { fSharedKeyLength, } fVerifyTokenLength: SmallInt;
-  fPublicKey, { fSharedKey, } fVerifyToken: TBytes;
+  fPublicKeyLength, fSharedKeyLength, fVerifyTokenLength: SmallInt;
+  fPublicKey, fSharedKey, fVerifyToken: TBytes;
+  i:Integer;
 
   b: Byte;
-
-  {$IFDEF OpenSSL}
-    rsa: pRSA;
-    ErrMsg: pBIO;
-  {$ENDIF}
-
-  { RSA: HCRYPTPROV;
-    MyKey: HCRYPTKEY; }
-
-  // SSL:TIdSSLIOHandlerSocketOpenSSL;
 begin
   if fServerVer < 39 then
     raise Exception.Create('#Invalid command in this version :' + GetSteck() );
 
-  // fSharedKeyLength := 0;
-  // fSharedKey := nil;
+  // Generate our shared secret
+  fSharedKeyLength := 16;
+  SetLength(fSharedKey, fSharedKeyLength);
+
+  for i := 0 to fSharedKeyLength-1 do
+    fSharedKey[i] := Random(256);
 
   // Server Id
   ServerId := ReadString();
@@ -4825,28 +4931,17 @@ begin
 
   // --------------------------------------------------------------------------
   {$IFDEF OpenSSL}
-     rsa := nil;
-//     PrivateKeyOut := nil;
-//     PublicKeyOut := nil;
-     try
-       rsa := RSA_generate_key(1024, RSA_F4, nil, ErrMsg);
-       if rsa = nil then
-         raise Exception.Create( GetError(ErrMsg) );
-{
-       PrivateKeyOut := BIO_new( BIO_s_file() );
+    Seq_Init();
+    try
+      Seq_InportPublicKey();
 
-       BIO_write_filename(PrivateKeyOut, 'd:\private.key');
-       PublicKeyOut := BIO_new(BIO_s_file());
-       BIO_write_filename(PublicKeyOut, 'd:\public.key');
-
-       PEM_write_bio_RSAPrivateKey(PrivateKeyOut, rsa, enc, nil, 0, nil, PChar(fPassword));
-       PEM_write_bio_RSAPublicKey(PublicKeyOut, rsa);}
-     finally
-       if rsa <> nil then RSA_free(rsa);
-       {if PrivateKeyOut <> nil then BIO_free_all(PrivateKeyOut);
-       if PublicKeyOut <> nil then BIO_free_all(PublicKeyOut);}
-     end;
+//      Seq_GenerateKey();
+    finally
+      Seq_Final();
+    end;
   {$ENDIF}
+
+  // HASH = mcHexDigest()
 
   { // Cmd
     fTCPClient.Socket.Write(cmdEncryptionKeyResponse);
@@ -4863,21 +4958,11 @@ begin
     // Verify token response
     fTCPClient.Socket.Write(fVerifyToken); }
 
-  { SSL := TIdSSLIOHandlerSocketOpenSSL.Create(fTCPClient);
-    fTCPClient.IOHandler := SSL;
-    SSL.SSLOptions.Method:= sslvTLSv1;
-    SSL.StartSSL; }
-
-  { // Open seq
-    if not CryptAcquireContext(@RSA, 'myKey', nil, PROV_RSA_FULL, CRYPT_NEWKEYSET) then
-    raise Exception.Create('CryptAcquireContext');
-
-    // Generate key pair
-    if not CryptGenKey(RSA, CALG_RSA_KEYX, RSA1024BIT_KEY or CRYPT_EXPORTABLE, @MyKey) then
-    raise Exception.Create('CryptGenKey'); }
-
-  { if not CryptImportKey(RSA, fPublicKey, fPublicKeyLength, 0, 0, @HPair) then
-    raise Exception.Create('CryptAcquireContext'); }
+   {fSSL := TIdSSLIOHandlerSocketOpenSSL.Create(fTCPClient);
+   fSSL.SSLContext.
+   fTCPClient.IOHandler := fSSL;
+   fSSL.SSLOptions.Method:= sslvTLSv1;
+   fSSL.StartSSL;}
 
   // === ClientStatuses ===
 
