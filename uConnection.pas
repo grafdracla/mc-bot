@@ -366,7 +366,8 @@ const
                    // 62     13w16a
                    // 65     13w18b
                    // 67     13w22a
-  cProtVerMax: Byte = 68; // 13w23b
+                   // 68     13w23b
+  cProtVerMax: Byte = 69; // 13w24a
 
 function mcHexDigest(strm:TStream):string;
 
