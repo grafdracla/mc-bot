@@ -39,7 +39,7 @@ const
   cmdSpawnMob             = $18;        //  S
   cmdSpawnPainting        = $19;        //  S
   cmdSpawnExperienceOrb   = $1A;        //  S
-  cmdSteerVehicle         = $1B;        //    C
+  cmdSteerVehicle         = $1B;        //    C  63
   cmdEntityVelocity       = $1C;        //  S
   cmdDestroyEntity        = $1D;        //  S
   cmdEntity               = $1E;        //  S
