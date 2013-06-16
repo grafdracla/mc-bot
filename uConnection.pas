@@ -3,7 +3,7 @@ unit uConnection;
 interface
 
 //{$DEFINE SHOW_SERVERCMD_ALL}
-//{$DEFINE OpenSSL}
+{$DEFINE OpenSSL}
 
 uses
   System.Classes, ExtCtrls,
@@ -332,16 +332,16 @@ uses
   ZLib,
   //ZLibExGZ,
   uLkJSON,
-
   IdHashSHA,
-
+//  IdSSLOpenSSL,
   qSysUtils,
   qStrUtils,
-  {$IFDEF OpenSSL}
-    libeay32,
-  {$ENDIF}
+
+{$IFDEF OpenSSL}
+  uOpenSSL,
+{$ENDIF}
+
   // Wcrypt2,
-  // IdSSLOpenSSL,
 
   uIBase;
 
@@ -1233,6 +1233,8 @@ procedure TClient.Execute;
 var
   fCmd: Byte;
 begin
+  Randomize();
+
   while not Terminated do begin
     try
       try
@@ -4827,9 +4829,14 @@ begin
 end;
 
 procedure TClient.cFD_EncryptionKeyRequest;
+var
+  fPublicKeyLength, fSharedKeyLength, fVerifyTokenLength: SmallInt;
+  fPublicKey, fSharedKey, fVerifyToken: TBytes;
 
 {$IFDEF MSCrypt}
-  {
+{const
+  RSA1024BIT_KEY = $04000000;
+
     RSA: HCRYPTPROV;
     MyKey: HCRYPTKEY;
 
@@ -4845,62 +4852,10 @@ procedure TClient.cFD_EncryptionKeyRequest;
     raise Exception.Create('CryptAcquireContext'); }
 {$ENDIF}
 
-{$IFDEF OpenSSL}
-  //========= OpenSSL =====================
-var
-  rsa: pRSA;
-
-  function GetError(ErrMsg:pBIO):string;
-  var
-    buff: array [0..1023] of AnsiChar;
-  begin
-    BIO_reset(ErrMsg);
-    BIO_read(ErrMsg, @buff, 1024);
-    result := string(buff);
-  end;
-
-  function Seq_Init():boolean;
-  begin
-    rsa := nil;
-
-    result := true;
-  end;
-
-  procedure Seq_Final();
-  begin
-    if rsa <> nil then RSA_free(rsa);
-  end;
-
-  procedure Seq_InportPublicKey();
-  var
-    keyfile: pBIO;
-  begin
-    keyfile := BIO_new(BIO_s_mem());
-
-    pKey := nil;
-    PEM_read_bio_RSAPublicKey(keyfile, nil, nil, );
-  end;
-
-  procedure Seq_GenerateKey();
-  {var
-    ErrMsg: pBIO;
-  }
-  begin
-    {  ErrMsg := nil;
-
-     rsa := RSA_generate_key(1024, RSA_F4, nil, ErrMsg);
-     if rsa = nil then
-       raise Exception.Create( GetError(ErrMsg) );}
-  end;
-{$ENDIF}
-
 var
   ServerId: string;
-  fPublicKeyLength, fSharedKeyLength, fVerifyTokenLength: SmallInt;
-  fPublicKey, fSharedKey, fVerifyToken: TBytes;
   i:Integer;
-
-  b: Byte;
+  b:Byte;
 begin
   if fServerVer < 39 then
     raise Exception.Create('#Invalid command in this version :' + GetSteck() );
@@ -4932,18 +4887,20 @@ begin
     raise Exception.Create('Not ended :'+GetSteck());
 
   // --------------------------------------------------------------------------
-  {$IFDEF OpenSSL}
-    Seq_Init();
-    try
-      Seq_InportPublicKey();
+{  Seq_Init();
+  try
+    Seq_InportPublicKey();
 
-//      Seq_GenerateKey();
-    finally
-      Seq_Final();
-    end;
-  {$ENDIF}
+    // Not ended
+    // fHash := JavaHexDigest('Notch');
 
-  // HASH = mcHexDigest()
+    // Cmd
+    fTCPClient.Socket.Write(cmdEncryptionKeyResponse);
+
+    Seq_GenerateKey();
+  finally
+    Seq_Final();
+  end;}
 
   { // Cmd
     fTCPClient.Socket.Write(cmdEncryptionKeyResponse);
@@ -5207,13 +5164,5 @@ function TClientInt.GetBlockInfo(BlockId:Integer):IBlockInfo;
 begin
   result := BloksInfos.GetInfo( BlockId );
 end;
-
-initialization
-  {$IFDEF OpenSSL}
-    OpenSSL_add_all_algorithms;
-    OpenSSL_add_all_ciphers;
-    OpenSSL_add_all_digests;
-    ERR_load_crypto_strings;
-  {$ENDIF}
 
 end.
