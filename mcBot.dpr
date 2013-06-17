@@ -31,7 +31,6 @@ uses
   uWork_Feller in 'uTasks\uWork_Feller.pas',
   uCmd_Digg in 'uTasks\uCmd_Digg.pas',
   uRenderUtils in 'uRenderUtils.pas',
-  Glaux in 'Glaux.pas',
   aTestBlock in 'aTestBlock.pas';
 
 {$R *.res}
