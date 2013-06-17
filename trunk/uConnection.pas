@@ -3,7 +3,7 @@ unit uConnection;
 interface
 
 //{$DEFINE SHOW_SERVERCMD_ALL}
-{$DEFINE OpenSSL}
+//{$DEFINE OpenSSL}
 
 uses
   System.Classes, ExtCtrls,
@@ -368,7 +368,8 @@ const
                    // 65     13w18b
                    // 67     13w22a
                    // 68     13w23b
-  cProtVerMax: Byte = 69; // 13w24a
+                   // 69     13w24a
+  cProtVerMax: Byte = 70; // 13w24b
 
 function mcHexDigest(strm:TStream):string;
 
