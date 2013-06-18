@@ -22,6 +22,8 @@ type
     function Name:string;
     function GetState:string;
 
+    function Help:string;
+
     procedure Event(Name, Data:string);
 
     procedure ChatMessage(MType, From, Text:string);
@@ -60,6 +62,13 @@ end;
 function TCmd_Points.GetState: string;
 begin
   result := '-';
+end;
+
+function TCmd_Points.Help: string;
+begin
+  result :=
+    'points add <point name>'#13#10+
+    'points delete <point name>';
 end;
 
 procedure TCmd_Points.Event(Name, Data: string);

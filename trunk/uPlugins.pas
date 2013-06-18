@@ -303,6 +303,8 @@ type
     function Name:string;
     function GetState:string;
 
+    function Help:string;
+
     procedure Event(Name, Data:string);
   end;
 

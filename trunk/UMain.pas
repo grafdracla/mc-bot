@@ -152,6 +152,7 @@ uses
 
   uSys_Login,
 
+  uHelp,
   uCmd_Walk,
   uCmd_Digg,
   uCmd_Points,
@@ -253,6 +254,8 @@ begin
   fTasks.Add( TPasive_GetDropItems.Create(iClient) );
 
   // Cmd
+  fTasks.Add( TCmd_Help.Create(iClient) );
+
   fCmd_Walk := TCmd_Walk.Create(iClient);
   fPath := fCmd_Walk.Path;
   fTasks.Add( fCmd_Walk );

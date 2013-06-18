@@ -22,6 +22,8 @@ type
     function Name:string;
     function GetState:string;
 
+    function Help:string;
+
     procedure Event(Name, Data:string);
 
     procedure ChatMessage(MType, From, Text:string);
@@ -67,6 +69,13 @@ begin
     Result := 'Work'
   else
     Result := '-';
+end;
+
+function TWork_Goto.Help: string;
+begin
+  result :=
+    'goto me'#13#10+
+    'goto place';
 end;
 
 procedure TWork_Goto.Event(Name, Data: string);

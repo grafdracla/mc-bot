@@ -39,6 +39,8 @@ type
     function Name:string;
     function GetState:string;
 
+    function Help:string;
+
     procedure Event(Name, Data:string);
 
     // Block Change
@@ -121,6 +123,11 @@ begin
       result := '-'
   else
     result := '';
+end;
+
+function TCmd_Digg.Help: string;
+begin
+  result := '';
 end;
 
 procedure TCmd_Digg.Event(Name, Data: string);

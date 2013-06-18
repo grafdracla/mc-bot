@@ -38,6 +38,8 @@ type
     function GetState:string;
     procedure Event(Name, Data:string);
 
+    function Help:string;
+
     // Chat
     procedure ChatMessage(MType, From, Text:string);
 
@@ -144,6 +146,11 @@ end;
 function TWork_Feller.GetState: string;
 begin
   result := fState;
+end;
+
+function TWork_Feller.Help: string;
+begin
+  result := 'work feller';
 end;
 
 procedure TWork_Feller.DoEndWork;

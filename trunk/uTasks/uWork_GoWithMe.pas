@@ -32,6 +32,8 @@ type
     function GetState:string;
     procedure Event(Name, Data:string);
 
+    function Help:string;
+
     procedure SpawnEntity(Entity:IEntity);
     procedure DestroyEntity(Entity:IEntity);
 
@@ -90,6 +92,13 @@ begin
     result := fTarget.Title
   else
     result := '-';
+end;
+
+function TWork_GoWithMe.Help: string;
+begin
+  result :=
+    'come with me'#13#10+
+    'stay here';
 end;
 
 procedure TWork_GoWithMe.Event(Name, Data: string);

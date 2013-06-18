@@ -36,6 +36,8 @@ type
     function Name:string;
     function GetState:string;
 
+    function Help:string;
+
     procedure Event(Name, Data:string);
 
     property Path:TPath read fPath;
@@ -104,6 +106,11 @@ begin
     result := fInfo
   else
     result := '-';
+end;
+
+function TCmd_Walk.Help: string;
+begin
+  result := '';
 end;
 
 procedure TCmd_Walk.Event(Name, Data: string);

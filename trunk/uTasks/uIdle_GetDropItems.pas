@@ -28,6 +28,8 @@ type
     function Name:string;
     function GetState:string;
 
+    function Help:string;
+
     procedure Event(Name, Data:string);
   end;
 
@@ -83,6 +85,11 @@ begin
     Result := 'work'
   else
     Result := '-';
+end;
+
+function TPasive_GetDropItems.Help: string;
+begin
+  result := '';
 end;
 
 procedure TPasive_GetDropItems.Event(Name, Data: string);
