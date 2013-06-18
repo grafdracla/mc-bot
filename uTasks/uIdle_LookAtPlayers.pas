@@ -29,6 +29,8 @@ type
     function Name:string;
     function GetState:string;
 
+    function Help:string;
+
     procedure Event(Name, Data:string);
   end;
 
@@ -84,6 +86,11 @@ begin
     Result := 'work'
   else
     Result := '-';
+end;
+
+function TIdle_LookAtPlayer.Help: string;
+begin
+  result := '';
 end;
 
 procedure TIdle_LookAtPlayer.Event(Name, Data: string);

@@ -31,7 +31,8 @@ uses
   uWork_Feller in 'uTasks\uWork_Feller.pas',
   uCmd_Digg in 'uTasks\uCmd_Digg.pas',
   uRenderUtils in 'uRenderUtils.pas',
-  aTestBlock in 'aTestBlock.pas';
+  aTestBlock in 'aTestBlock.pas',
+  uHelp in 'uTasks\uHelp.pas';
 
 {$R *.res}
 

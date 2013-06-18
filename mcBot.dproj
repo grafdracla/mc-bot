@@ -111,6 +111,7 @@
 			<DCCReference Include="uTasks\uCmd_Digg.pas"/>
 			<DCCReference Include="uRenderUtils.pas"/>
 			<DCCReference Include="aTestBlock.pas"/>
+			<DCCReference Include="uTasks\uHelp.pas"/>
 			<None Include="bloks.ini"/>
 			<None Include="config.ini"/>
 			<None Include="enttitys.ini"/>

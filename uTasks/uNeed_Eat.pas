@@ -18,6 +18,8 @@ type
     function Name:string;
     function GetState:string;
 
+    function Help:string;
+
     procedure Event(Name, Data:string);
     procedure UpdateHealth;
   end;
@@ -44,6 +46,11 @@ end;
 function TNeed_eat.GetState: string;
 begin
   result := '-';
+end;
+
+function TNeed_eat.Help: string;
+begin
+  result := '';
 end;
 
 procedure TNeed_eat.Event(Name, Data: string);
