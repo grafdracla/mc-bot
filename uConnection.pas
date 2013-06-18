@@ -369,7 +369,10 @@ const
                    // 67     13w22a
                    // 68     13w23b
                    // 69     13w24a
-  cProtVerMax: Byte = 70; // 13w24b
+                   // 70     13w24b
+  cProtVerMax: Byte = 71; // 13w25a
+
+  cMaxVer = MaxByte;
 
 function mcHexDigest(strm:TStream):string;
 
@@ -677,7 +680,7 @@ begin
 
   case fServerVer of
     // 1.3 -
-    39..MaxByte:begin
+    39..cMaxVer:begin
       // Protocol
       fTCPClient.Socket.Write( fServerVer );
 
@@ -849,7 +852,7 @@ begin
 
     case fServerVer of
       // 1.3
-      39..MaxByte:begin
+      39..cMaxVer:begin
         // Cursor pos
         // X
         fTCPClient.Socket.Write(SubX);
@@ -1580,7 +1583,7 @@ begin
               fSlot := Entity.Slots[0];
 
             case fServerVer of
-              39..MaxByte:
+              39..cMaxVer:
                 ReadSlotData( fSlot );
 
               else begin
@@ -1846,7 +1849,7 @@ var
 begin
   case fServerVer of
     // 1.3
-    39..MaxByte:
+    39..cMaxVer:
       try
         // Cmd
         fTCPClient.Socket.Write(cmdClientStatuses);
@@ -2034,7 +2037,7 @@ begin
 
     case fServerVer of
       // 1.3 -
-      39..MaxByte:begin
+      39..cMaxVer:begin
         // Level type
         LevelType := ReadString();
 
@@ -2211,7 +2214,7 @@ begin
 
     case fServerVer of
       // 1.4.1
-      47..MaxByte:begin
+      47..cMaxVer:begin
         // Age of the world
         Age := fIOHandler.ReadInt64();
 
@@ -2264,7 +2267,7 @@ begin
 
     case fServerVer of
       // 1.3
-      39..maxByte:
+      39..cMaxVer:
         ReadSlotData(fSlot)
 
       else begin
@@ -2568,7 +2571,7 @@ begin
 
     //--- MetaData ---
     case fServerVer of
-      39..MaxByte:
+      39..cMaxVer:
         ReadMetaData(fEntity);
     end;
 
@@ -2814,7 +2817,7 @@ begin
 
     case fServerVer of
       // 1.3
-      39..MaxByte:begin
+      39..cMaxVer:begin
         // HeadYaw
         fEntity.HeadYaw := fIOHandler.ReadByte();
 
@@ -3032,7 +3035,7 @@ begin
   try
     case fServerVer of
       // 1.3 -
-      39..MaxByte:begin
+      39..cMaxVer:begin
         // Count
         fCount := fIOHandler.ReadByte();
 
@@ -3545,7 +3548,7 @@ begin
 
   case fServerVer of
     // 1.3
-    39..MaxByte:;
+    39..cMaxVer:;
     // 1.2
     28..38:begin
       // Unused int
@@ -3726,7 +3729,7 @@ begin
   // Type
   case fServerVer of
     // 1.3
-    39..MaxByte:
+    39..cMaxVer:
       fBlockType := fIOHandler.ReadSmallInt();
     // 1.2.5
     else
@@ -3781,7 +3784,7 @@ begin
   fIOHandler.ReadByte();
 
   case fServerVer of
-    39..MaxByte:begin
+    39..cMaxVer:begin
       // Block ID
       fIOHandler.ReadWord();
     end;
@@ -4585,7 +4588,12 @@ begin
   fIOHandler.ReadLongInt();
 
   // Amount
-  fIOHandler.ReadByte();
+  case fServerVer of
+    71..cMaxVer:
+      fIOHandler.ReadLongInt();
+    else
+      fIOHandler.ReadByte();
+  end;
 
 {$IFDEF SHOW_SERVERCMD_ALL}
   AddLog('#' + GetCmdName(cmdIncrementStatistic));
@@ -4643,7 +4651,7 @@ procedure TClient.cCA_PlayerAbilities;
 begin
   case fServerVer of
     // 13w16a
-    62..MaxByte:begin
+    62..cMaxVer:begin
       // Flags
       fIOHandler.ReadByte();
 
