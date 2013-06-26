@@ -228,6 +228,8 @@ type
     procedure PlayerPositionLook(X, Y, Z, fStance: Double; fYaw, fPitch: Single; fJamp: Boolean);
     procedure EntyAction(EID:LongWord; Action:Byte; Unknown:LongWord);
 
+    procedure SteerVehicle(Sideways, Forward:Single; Jump, Unmount:boolean);
+
     procedure LookAt( Pos:TPos );
     procedure LookAtEntity(EID: LongWord);
 
@@ -2010,9 +2012,44 @@ begin
     // Action
     fTCPClient.Socket.Write(Action);
 
-    // Leash
+    // Unknown
     if fServerVer >= 62 then
       fTCPClient.Socket.Write( Unknown );
+  except
+  end;
+end;
+
+procedure TClient.SteerVehicle(Sideways, Forward:Single; Jump, Unmount:boolean);
+var
+  fDW:LongWord;
+  fB:Byte;
+begin
+  try
+    // Cmd
+    fTCPClient.Socket.Write(cmdSteerVehicle);
+
+    // Sideways
+    fDW := PLongWord(@Sideways)^;
+    fTCPClient.Socket.Write(fDW);
+
+    // Forward
+    fDW := PLongWord(@Forward)^;
+    fTCPClient.Socket.Write(fDW);
+
+    // Jump
+    if Jamp then
+      fB := 0
+    else
+      fB := 1;
+    fTCPClient.Socket.Write(fB);
+
+    // Unmount
+    if Unmount then
+      fB := 0
+    else
+      fB := 1;
+    fTCPClient.Socket.Write(fB);
+
   except
   end;
 end;
@@ -4206,6 +4243,11 @@ begin
     if fServerVer >= 52 then begin
       fIOHandler.ReadByte(); //@@@
     end;
+
+    // Unknown
+    if fServerVer >= 72 then
+      if fWId = 11 then
+        fIOHandler.ReadLongInt(); // @@@
 
     // Get wind
     if not Windows.TryGetValue(fWId, fWnd) then begin
