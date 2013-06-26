@@ -370,7 +370,8 @@ const
                    // 68     13w23b
                    // 69     13w24a
                    // 70     13w24b
-  cProtVerMax: Byte = 71; // 13w25a
+                   // 71     13w25a
+  cProtVerMax: Byte = 72; // 1.6 Pre-release
 
   cMaxVer = MaxByte;
 
