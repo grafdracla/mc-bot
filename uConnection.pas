@@ -79,7 +79,7 @@ type
   protected
     procedure AddLog(str: string);
 
-    procedure SendStr(str: string);
+    procedure SendStr(str: string; IOHandler: TIdIOHandler = nil);
 
     function ReadString(IOHandler: TIdIOHandler = nil): string;
     procedure ReadBuffer(Buf: Pointer; BufSize: Integer);
@@ -354,7 +354,6 @@ const
                    // 47     1.4.1
                    // 49     1.4.4, 1.4.5
                    // 51     1.4.6, 1.4.7
-
                    // 52     13w01a
                    // 53     13w02b
                    // 54     13w03a
@@ -373,7 +372,8 @@ const
                    // 69     13w24a
                    // 70     13w24b
                    // 71     13w25a
-  cProtVerMax: Byte = 72; // 1.6 Pre-release
+                   // 72     1.6 Pre-release
+  cProtVerMax: Byte = 73; // 1.6.1
 
   cMaxVer = MaxByte;
 
@@ -599,14 +599,97 @@ procedure TClient.DoConnect(NideServerVer:byte);
     end;
   end;
 
-const
-  cMagikByte: Byte = $01;
+  function GetVer_14():boolean;
+  const
+    cMagikByte: Byte = $01;
+  var
+    fTCPVer: TIdTCPClient;
+    W:Word;
+    fB: Byte;
+    str, sub:string;
+    i:Integer;
+  begin
+    result := false;
+
+    fTCPVer := TIdTCPClient.Create;
+    try
+      fTCPVer.Host := Host;
+      fTCPVer.Port := Port;
+
+      try
+        fTCPVer.Connect;
+      except
+        Exit;
+      end;
+
+      // === Get server version ===
+      // Ping
+      fTCPVer.Socket.Write(cmdServerListPing);
+
+      // Magik byte >= 49
+      fTCPVer.Socket.Write(cMagikByte);
+
+        //========================
+        // Plugin
+        fTCPVer.Socket.Write(cmdPluginMessage);
+
+        // Sned str
+        SendStr('MC|PingHost', fTCPVer.IOHandler);
+
+        // Len
+        W := 7 + 2*Length(Host);
+        fTCPVer.Socket.Write( w );
+
+        // Prot
+        fTCPVer.Socket.Write( cProtVerMax );
+
+        // hostname
+        SendStr(Host, fTCPVer.IOHandler);
+
+        // Port
+        fTCPVer.Socket.Write( Port );
+
+      // --- Read data ---
+      try
+        fB := fTCPVer.Socket.ReadByte;
+      except
+        Exit;
+      end;
+
+      if fB <> cmdDisconnectKick then begin
+        AddLog('#Invalid protocol');
+        Exit;
+      end;
+
+      str := ReadString(fTCPVer.IOHandler);
+
+      i := 1;
+      ExctarctSub(str, i);
+
+      // Server ver
+      sub := ExctarctSub(str, i);
+      if not IsNum( sub, fServerVer ) then
+        fServerVer := NideServerVer;
+
+      fClientVer := ExctarctSub(str, i);
+
+      if (fServerVer < cProtVerMin) or (fServerVer > cProtVerMax) then begin
+        AddLog('#Unknow versin: ' + IntToStr(fServerVer) );
+        Disconect;
+        Exit;
+      end;
+
+      fTCPVer.Disconnect;
+
+      result := true;
+    finally
+      fTCPVer.Free;
+    end;
+  end;
 
 var
+  fV: Integer;
   fB: Byte;
-  i, fV: Integer;
-  str, sub: string;
-  fTCPVer: TIdTCPClient;
 begin
   if IsConnected then exit;
 
@@ -619,60 +702,10 @@ begin
   fTCPClient.Port := Port;
 
   // === Test server ===
-  str := '';
-
-  fTCPVer := TIdTCPClient.Create;
-  try
-    fTCPVer.Host := Host;
-    fTCPVer.Port := Port;
-
-    try
-      fTCPVer.Connect;
-    except
-      Exit;
-    end;
-
-    // === Get server version ===
-    // Ping
-    fTCPVer.Socket.Write(cmdServerListPing);
-
-    // Magik byte >= 49
-    fTCPVer.Socket.Write(cMagikByte);
-
-    // --- Read data ---
-    try
-      fB := fTCPVer.Socket.ReadByte;
-    except
-      Exit;
-    end;
-
-    if fB <> cmdDisconnectKick then begin
-      AddLog('#Invalid protocol');
-      Exit;
-    end;
-
-    str := ReadString(fTCPVer.IOHandler);
-
-    fTCPVer.Disconnect;
-  finally
-    fTCPVer.Free;
-  end;
-
-  i := 1;
-  ExctarctSub(str, i);
-
-  // Server ver
-  sub := ExctarctSub(str, i);
-  if not IsNum( sub, fServerVer ) then
+  // Test 1.4-
+  if not GetVer_14() then
+    // Older - set in INI
     fServerVer := NideServerVer;
-
-  fClientVer := ExctarctSub(str, i);
-
-  if (fServerVer < cProtVerMin) or (fServerVer > cProtVerMax) then begin
-    AddLog('#Unknow versin: ' + IntToStr(fServerVer) );
-    Disconect;
-    Exit;
-  end;
 
   // === Test server ===
   fTCPClient.Connect;
@@ -768,16 +801,19 @@ begin
   Result := 360 - ArcTan2(X - Position.X, Z - Position.Z) * (180 / Pi);
 end;
 
-procedure TClient.SendStr(str: string);
+procedure TClient.SendStr(str: string; IOHandler: TIdIOHandler = nil);
 var
   w: Word;
 begin
+  if IOHandler = nil then
+    IOHandler := fTCPClient.Socket;
+
   // Len
   w := Length(str);
-  fTCPClient.Socket.Write(w);
+  IOHandler.Write(w);
 
   // Data
-  fTCPClient.Socket.Write(str, SysUtils.TEncoding.BigEndianUnicode);
+  IOHandler.Write(str, SysUtils.TEncoding.BigEndianUnicode);
 end;
 
 procedure TClient.Digging(Pos:TAbsPos; Status, Face: Byte);
