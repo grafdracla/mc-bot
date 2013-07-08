@@ -148,6 +148,7 @@ type
     procedure c82_UpdateSign();
     procedure c83_ItemData();
     procedure c84_UpdateTileEntity();
+    procedure c85_cmdSignPlacement();
     procedure cC8_IncrementStatistic();
     procedure cC9_PlayerListItem();
     procedure cCA_PlayerAbilities();
@@ -351,8 +352,11 @@ const
   cProtVerMin: Byte = 28; // 1.2.0
                    // 29     1.2.4  1.2.5
                    // 39     1.3.1  1.3.2
+
                    // 47     1.4.1
+                   // 48     1.4.3
                    // 49     1.4.4, 1.4.5
+                   // 50     12w49a
                    // 51     1.4.6, 1.4.7
                    // 52     13w01a
                    // 53     13w02b
@@ -366,14 +370,17 @@ const
                    // 61     1.5.2
                    // 62     13w16a
                    // 63     13w16b
+                   // 64     13w17a
                    // 65     13w18b
+                   // 66     13w19a
                    // 67     13w22a
                    // 68     13w23b
                    // 69     13w24a
                    // 70     13w24b
                    // 71     13w25a
                    // 72     1.6 Pre-release
-  cProtVerMax: Byte = 73; // 1.6.1
+                   // 73     1.6.1
+  cProtVerMax: Byte = 74; // 1.6.2
 
   cMaxVer = MaxByte;
 
@@ -1469,6 +1476,9 @@ begin
 
         cmdUpdateTileEntity:
           c84_UpdateTileEntity();
+
+        cmdSignPlacement:
+          c85_cmdSignPlacement();
 
         cmdIncrementStatistic:
           cC8_IncrementStatistic();
@@ -3531,7 +3541,8 @@ procedure TClient.c2C_EntityProperties();
 var
   fEId {, fDW}: LongWord;
   fEntity: IEntity;
-  fCount, i: Integer;
+  fCount, i, j: Integer;
+  fListCnt:SmallInt;
   fKey:string;
 begin
   if fServerVer < 67 then
@@ -3550,15 +3561,46 @@ begin
     // Count
     fCount := fIOHandler.ReadLongInt();
 
-    for i := 0 to fCount-1 do begin
-      // Key
-      fKey := ReadString();
+    case fServerVer of
+      // 1.6.2 - ...
+      47..cMaxVer:
+        for i := 0 to fCount-1 do begin
+          // Key
+          fKey := ReadString();
 
-      // val1
-      {fDW :=} fIOHandler.ReadLongWord();
+          // val1
+          {fDW :=} fIOHandler.ReadInt64();
 
-      // Cal2
-      {fDW :=} fIOHandler.ReadLongWord();
+          // ListLength
+          fListCnt := fIOHandler.ReadSmallInt();
+
+          //== ListElement ==
+          for j := 0 to fListCnt-1 do begin
+            // UUID MSB
+            fIOHandler.ReadInt64();
+
+            // UUID LSB
+            fIOHandler.ReadInt64();
+
+            // ?
+            fIOHandler.ReadInt64();
+
+            // ?
+            fIOHandler.ReadByte();
+          end;
+        end;
+      // .. - 1.6.0
+      else
+        for i := 0 to fCount-1 do begin
+          // Key
+          fKey := ReadString();
+
+          // val1
+          {fDW :=} fIOHandler.ReadLongWord();
+
+          // Cal2
+          {fDW :=} fIOHandler.ReadLongWord();
+        end;
     end;
 
   finally
@@ -4655,6 +4697,30 @@ begin
 
 {$IFDEF SHOW_SERVERCMD_ALL}
   AddLog( GetCmdName(cmdUpdateTileEntity) );
+{$ENDIF}
+end;
+
+procedure TClient.c85_cmdSignPlacement();
+begin
+  if fServerVer < 74 then
+    raise Exception.Create('#Invalid command in this version :' + GetSteck() );
+
+  // Unknown
+  fIOHandler.ReadByte();
+
+  // X
+  {fX :=} fIOHandler.ReadLongInt();
+
+  // Y
+  {fY :=} fIOHandler.ReadSmallInt();
+
+  // Z
+  {fZ :=} fIOHandler.ReadLongInt();
+
+  //@@@
+
+{$IFDEF SHOW_SERVERCMD_ALL}
+  AddLog( GetCmdName(cmdSignPlacement) );
 {$ENDIF}
 end;
 
