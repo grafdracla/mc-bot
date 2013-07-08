@@ -79,6 +79,7 @@ const
   cmdUpdateSign           = $82;        //  S C         Not ended
   cmdItemData             = $83;        //  S           Not ended
   cmdUpdateTileEntity     = $84;        //  S           Not ended
+  cmdSignPlacement        = $85;        //  S
   cmdIncrementStatistic   = $C8;        //  S           No nide
   cmdPlayerListItem       = $C9;        //  S
   cmdPlayerAbilities      = $CA;        //  S C         Not ended
