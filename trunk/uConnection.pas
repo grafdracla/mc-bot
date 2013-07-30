@@ -334,7 +334,7 @@ uses
   Variants,
   ZLib,
   //ZLibExGZ,
-  uLkJSON,
+  uLkJSON, //   DBXJSON,
   IdHashSHA,
 //  IdSSLOpenSSL,
   qSysUtils,
@@ -2192,91 +2192,111 @@ begin
 end;
 
 procedure TClient.c03_ChatMessage;
+
+  procedure OperateChatMsg(var Text:string; var From:string; var MType:string);
+  var
+    i:Integer;
+    fMark, sub:string;
+  begin
+    // Cut special
+    while true do begin
+      i := Pos('§', Text);
+      if i = 0 then break;
+
+      Text := Copy(Text, 1, i-1) + Copy(Text, i+2, Length(Text));
+    end;
+
+    fMark := Copy(Text, 1, 1);
+    // Server
+    if fMark = '[' then begin
+      MType := 'chat.type.admin';
+      From := ExtractWord(1, Text, ['[',']']);
+
+      // In []
+      if ExtractWord(2, From, [':']) <> '' then begin
+        sub := From;
+
+        From := ExtractWord(1, sub, [':', '"']);
+
+        // End text
+        Text := trim( Copy(Text, Pos(']', Text)+1, Length(Text)) );
+
+        // Text in service
+        Text := trim( Copy(sub, Pos(':', sub)+1, Length(sub)) ) + trim(' ' +Text);
+      end
+      else
+        Text := trim( Copy(Text, Pos(']', Text)+1, Length(Text)) );
+    end
+    // User
+    else if fMark = '<' then begin
+      MType := 'chat.type.announcement';
+      From := ExtractWord(1, Text, ['<','>']);
+      Text := trim( Copy(Text, Pos('>', Text)+1, Length(Text)) );
+    end;
+
+    // Whispers
+    if trim( lowercase( ExtractWord(2, Text, [' ']) ) ) = 'whispers' then begin
+      MType := 'commands.message.display.incoming';
+      From := ExtractWord(1, Text, [' ']);
+      Text := trim( Copy(Text, WordPosition(3, Text, [' ']), Length(Text)) );
+
+      //# patch 1.5
+      if Copy(Text, 1, 7) = 'to you:' then
+        Text := Trim( Copy(Text, 8, Length(Text)) );
+    end;
+  end;
+
 var
-  str, sub, fType, fFrom, fText, fMark: string;
   i, fLevel:Integer;
+  fType, fFrom, fText: string;
   fJSON, fUsing, fValue:TlkJSONbase;
   fTask:ITask;
   fTaskEventChat:ITaskEventChat;
 begin
-  str := ReadString();
+  fType := 'chat.type.announcement';
+  fFrom := '';
+  fText := ReadString();
 
   if fServerVer >= 67 then begin
-    fJSON := TlkJSON.ParseText( str );
+
+    fJSON := TlkJSON.ParseText( fText );
     try
       // Type
-      fType := fJSON.Field['translate'].Value;
+      fValue := fJSON.Field['translate'];
+      if fValue <> nil then
+        fType := fValue.Value;
 
+      // using
       fUsing := fJSON.Field['using'];
+      if fUsing <> nil then begin
+        // From
+        fValue := fUsing.Child[0];
+        if fValue <> nil then
+          fFrom := fValue.Value;
 
-      // From
-      fFrom := fUsing.Child[0].Value;
+        fValue := fUsing.Child[1];
 
-      fValue := fUsing.Child[1];
-
+        // Text
+        if fValue.Count = 0 then
+          fText := fValue.Value
+        else
+          fText := GenerateReadableText( fValue, fLevel );
+      end
       // Text
-      if fValue.Count = 0 then
-        fText := fValue.Value
+      else begin
+        fValue := fJSON.Field['text'];
+        if fValue <> nil then
+          fText := fValue.Value;
 
-      else
-        fText := GenerateReadableText( fValue, fLevel );
+        OperateChatMsg(fText, fFrom, fType);
+      end;
 
     finally
       fJSON.Free;
     end;
   end
-  else begin
-    fType := 'chat.type.announcement';
-    fFrom := '';
-    fText := str;
-
-    // Cut special
-    while true do begin
-      i := Pos('§', fText);
-      if i = 0 then break;
-
-      fText := Copy(fText, 1, i-1) + Copy(fText, i+2, Length(fText));
-    end;
-
-    fMark := Copy(fText, 1, 1);
-    // Server
-    if fMark = '[' then begin
-      fType := 'chat.type.admin';
-      fFrom := ExtractWord(1, fText, ['[',']']);
-
-      // In []
-      if ExtractWord(2, fFrom, [':']) <> '' then begin
-        sub := fFrom;
-
-        fFrom := ExtractWord(1, sub, [':', '"']);
-
-        // End text
-        fText := trim( Copy(fText, Pos(']', fText)+1, Length(fText)) );
-
-        // Text in service
-        fText := trim( Copy(sub, Pos(':', sub)+1, Length(sub)) ) + trim(' ' +fText);
-      end
-      else
-        fText := trim( Copy(fText, Pos(']', fText)+1, Length(fText)) );
-    end
-    // User
-    else if fMark = '<' then begin
-      fType := 'chat.type.announcement';
-      fFrom := ExtractWord(1, fText, ['<','>']);
-      fText := trim( Copy(fText, Pos('>', fText)+1, Length(fText)) );
-    end;
-
-    // Whispers
-    if trim( lowercase( ExtractWord(2, fText, [' ']) ) ) = 'whispers' then begin
-      fType := 'commands.message.display.incoming';
-      fFrom := ExtractWord(1, fText, [' ']);
-      fText := trim( Copy(fText, WordPosition(3, fText, [' ']), Length(fText)) );
-
-      //# patch 1.5
-      if Copy(fText, 1, 7) = 'to you:' then
-        fText := Trim( Copy(fText, 8, Length(fText)) );
-    end;
-  end;
+  else
+    OperateChatMsg(fText, fFrom, fType);
 
   // Log event
   AddLog('#' + GetCmdName(cmdChatMessage) + ': ' + fType+ '|'+fFrom+'|'+fText);
