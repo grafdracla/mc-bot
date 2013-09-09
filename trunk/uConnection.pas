@@ -379,7 +379,9 @@ const
                    // 71     13w25a
                    // 72     1.6 Pre-release
                    // 73     1.6.1
-  cProtVerMax: Byte = 74; // 1.6.2
+                   // 74     1.6.2
+                   // 75     13w36a
+  cProtVerMax: Byte = 75;
 
   cMaxVer = MaxByte;
 
@@ -2263,39 +2265,45 @@ begin
   if fServerVer >= 67 then begin
 
     fJSON := TJSONObject.ParseJSONValue(fText) as TJSONObject;
-    try
-      // Type
-      fJPair := fJSON.Get('translate');
-      if fJPair <> nil then
-        fType := fJPair.ToString;
-
-      // using
-      fJPair := fJSON.Get('using');
-      if fJPair <> nil then begin
-        fJArray := fJPair.JsonValue as TJSONArray;
-
-        case fJArray.Size of
-          1:
-            fText := fJArray.Get(1).Value;
-          2:begin
-            fFrom := fJArray.Get(0).Value;
-            fText := fJArray.Get(1).Value;
-          end;
-          else
-            fText := fJArray.ToString;
-        end;
-      end
-      // Text
-      else begin
-        fJPair := fJSON.Get('text');
+    if fJSON <> nil then
+      try
+        // Type
+        fJPair := fJSON.Get('translate');
         if fJPair <> nil then
-          fText := fJPair.JsonValue.Value;
+          fType := fJPair.JsonValue.Value;
 
-        OperateChatMsg(fText, fFrom, fType);
+        // Using
+        fJPair := fJSON.Get('using');
+        if fJPair = nil then
+          fJPair := fJSON.Get('with');
+
+        if fJPair <> nil then begin
+          fJArray := fJPair.JsonValue as TJSONArray;
+
+          case fJArray.Size of
+            1:
+              fText := fJArray.Get(1).Value;
+
+            2:begin
+              fFrom := fJArray.Get(0).Value;
+              fText := fJArray.Get(1).Value;
+            end;
+
+            else
+              fText := fJArray.ToString;
+          end;
+        end
+        // Text
+        else begin
+          fJPair := fJSON.Get('text');
+          if fJPair <> nil then
+            fText := fJPair.JsonValue.Value;
+
+          OperateChatMsg(fText, fFrom, fType);
+        end;
+      finally
+        fJSON.Free;
       end;
-    finally
-      fJSON.Free;
-    end;
   end
   else
     OperateChatMsg(fText, fFrom, fType);
@@ -4241,6 +4249,9 @@ begin
   // Pitch
   { fPitch := } fIOHandler.ReadByte();
 
+  if fServerVer >= 75 then
+    fIOHandler.ReadByte();
+
 {$IFDEF SHOW_SERVERCMD_ALL}
   AddLog('#' + GetCmdName(cmdNamedSoundEffect));
 {$ENDIF}
@@ -4747,19 +4758,37 @@ begin
 end;
 
 procedure TClient.cC8_IncrementStatistic;
-// var
-// StatisticId:Integer;
-// Amount:Byte;
+var
+  fCnt, i:Integer;
+  str:string;
 begin
-  // StatisticId
-  fIOHandler.ReadLongInt();
-
-  // Amount
   case fServerVer of
-    71..cMaxVer:
+    75..cMaxVer:begin
+      // Count
+      fCnt := fIOHandler.ReadLongInt();
+
+      for i := 0 to fCnt-1 do begin
+        // Name
+        str := ReadString();
+
+        // Amount
+        fIOHandler.ReadLongInt();
+      end;
+    end;
+    71..74:begin
+      // StatisticId
       fIOHandler.ReadLongInt();
-    else
+
+      // Amount
+      fIOHandler.ReadLongInt();
+    end
+    else begin
+      // StatisticId
+      fIOHandler.ReadLongInt();
+
+      // Amount
       fIOHandler.ReadByte();
+    end;
   end;
 
 {$IFDEF SHOW_SERVERCMD_ALL}

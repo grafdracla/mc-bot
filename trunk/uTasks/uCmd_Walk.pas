@@ -115,7 +115,7 @@ end;
 
 procedure TCmd_Walk.Event(Name, Data: string);
 var
-//  fJSON:TlkJSONbase;
+  fJSON:TJSONObject;
   fX,fY,fZ:Extended;
   fFRange, fMaxPath:Integer;
   fNearest:boolean;
@@ -124,9 +124,7 @@ begin
   // Set destanation
   if Name = 'cmd.walk.set' then begin
 
-    raise Exception.Create('@@@');
-
-(*    fJSON := TlkJSON.ParseText( Data );
+    fJSON := TJSONObject.ParseJSONValue(Data) as TJSONObject;
     try
       fX := 0;
       fY := 0;
@@ -135,8 +133,9 @@ begin
       fNearest := false;
 
       // Point
-      if fJSON.Field['place'] <> nil then begin
-        val := fClient.GetParam('points', fJSON.Field['place'].Value);
+      if fJSON.Get('place') <> nil then begin
+        val := fClient.GetParam('points', fJSON.Get('place').JsonValue.Value);
+
         if val = '' then begin
           fClient.SendEvent('cmd.walk.error','Place not found');
 
@@ -153,8 +152,8 @@ begin
       end;
 
       // Coord
-      if fJSON.Field['point'] <> nil then begin
-        val := fJSON.Field['point'].Value;
+      if fJSON.Get('point') <> nil then begin
+        val := fJSON.Get('point').JsonValue.Value;
 
         fX := StrToFloat( ExtractWord(1, val, [';']) );
         fY := StrToFloat( ExtractWord(2, val, [';']) );
@@ -162,17 +161,16 @@ begin
       end;
 
       // Range
-      if fJSON.Field['frange'] <> nil then
-        fFRange := fJSON.Field['frange'].Value;
+      if fJSON.Get('frange') <> nil then
+        fFRange := (fJSON.Get('frange').JsonValue as TJSONNumber).AsInt;
 
       // Type
-      if fJSON.Field['type'] <> nil then
-        fNearest := fJSON.Field['type'].Value = 'nearest';
+      if fJSON.Get('type') <> nil then
+        fNearest := fJSON.Get('type').JsonValue.Value = 'nearest';
 
     finally
       fJSON.Free;
     end;
-*)
 
     fInfo := 'Calck path';
 

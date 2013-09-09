@@ -70,6 +70,7 @@ end;
 procedure TTasks.Add(Task: ITask);
 var
   fJSON: TJSONObject;
+  fPair:TJSONPair;
   fJItems: TJSONArray;
   i:Integer;
   fList:TList<ITask>;
@@ -77,30 +78,30 @@ var
 begin
   Data := Task.GetInfo;
 
-  //@@@
-(*
   fJSON := TJSONObject.ParseJSONValue(Data) as TJSONObject;
   try
+    fPair := fJSON.Get('events');
+    if fPair <> nil then begin
 
-    fJItems := fJSON.Get('events').JsonValue as TJSONArray;
-    if fJItems <> nil then
-      for i := 0 to fJItems.Size-1 do begin
-        fKey := fJItems.Get(i).Value;
+      fJItems := fPair.JsonValue as TJSONArray;
+      if fJItems <> nil then
+        for i := 0 to fJItems.Size-1 do begin
+          fKey := fJItems.Get(i).Value;
 
-        // Get list
-        if not fEvents.TryGetValue( fKey, fList ) then begin
-          // New list
-          fList := TList<ITask>.Create;
-          fEvents.Add( fKey, fList );
+          // Get list
+          if not fEvents.TryGetValue( fKey, fList ) then begin
+            // New list
+            fList := TList<ITask>.Create;
+            fEvents.Add( fKey, fList );
+          end;
+
+          fList.Add(Task);
         end;
-
-        fList.Add(Task);
-      end;
+    end;
 
   finally
     fJSON.Free;
   end;
-*)
 
   inherited Add(Task);
 end;
