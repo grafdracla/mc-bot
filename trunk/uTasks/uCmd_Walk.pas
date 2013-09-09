@@ -49,7 +49,7 @@ uses
   Windows,
   SysUtils,
   Math,
-  uLkJSON,
+  DBXJSON,
 
   qSysUtils,
   qStrUtils,
@@ -115,7 +115,7 @@ end;
 
 procedure TCmd_Walk.Event(Name, Data: string);
 var
-  fJSON:TlkJSONbase;
+//  fJSON:TlkJSONbase;
   fX,fY,fZ:Extended;
   fFRange, fMaxPath:Integer;
   fNearest:boolean;
@@ -123,7 +123,10 @@ var
 begin
   // Set destanation
   if Name = 'cmd.walk.set' then begin
-    fJSON := TlkJSON.ParseText( Data );
+
+    raise Exception.Create('@@@');
+
+(*    fJSON := TlkJSON.ParseText( Data );
     try
       fX := 0;
       fY := 0;
@@ -169,6 +172,7 @@ begin
     finally
       fJSON.Free;
     end;
+*)
 
     fInfo := 'Calck path';
 

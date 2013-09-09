@@ -35,7 +35,7 @@ uses
   StrUtils,
   SysUtils,
 
-  uLkJSON,
+  DBXJSON,
 
   qStrUtils;
 
@@ -72,26 +72,34 @@ begin
 end;
 
 procedure TCmd_Points.Event(Name, Data: string);
-var
-  fJSON {, fVal}:TlkJSONbase;
+//var
+//  fJSON {, fVal}:TlkJSONbase;
 begin
   // Add
   if name = 'cmd.points.add' then begin
+    raise Exception.Create('@@@');
+
+(*
     fJSON := TlkJSON.ParseText( Data );
     try
       AddPoint( fJSON.Field['name'].Value );
     finally
       fJSON.Free;
     end;
+*)
   end
   // Del
   else if name = 'cmd.points.del' then begin
+    raise Exception.Create('@@@');
+
+(*
     fJSON := TlkJSON.ParseText( Data );
     try
       DelPoint( fJSON.Field['name'].Value );
     finally
       fJSON.Free;
     end;
+*)
   end;
 end;
 

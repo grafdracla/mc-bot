@@ -54,7 +54,7 @@ uses
   Windows,
   SysUtils,
   Math,
-  uLkJSON,
+  DBXJSON,
 
   qStrUtils,
   qSysUtils,
@@ -132,11 +132,14 @@ end;
 
 procedure TCmd_Digg.Event(Name, Data: string);
 var
-  fJSON:TlkJSONBase;
+//  fJSON:TlkJSONBase;
   val:string;
 begin
   // Set destanation
   if Name = 'cmd.digg.set' then begin
+
+    raise Exception.Create('@@@');
+(*
     fJSON := TlkJSON.ParseText( Data );
     try
       fAPos.X := 0;
@@ -158,6 +161,7 @@ begin
     finally
       fJSON.Free;
     end;
+*)
   end
   //Set work
   else if Name = 'cmd.digg.work' then begin

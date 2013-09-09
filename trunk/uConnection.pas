@@ -2,8 +2,7 @@ unit uConnection;
 
 interface
 
-//{$DEFINE SHOW_SERVERCMD_ALL}
-//{$DEFINE OpenSSL}
+{$I Options.inc}
 
 uses
   System.Classes, ExtCtrls,
@@ -334,7 +333,7 @@ uses
   Variants,
   ZLib,
   //ZLibExGZ,
-  uLkJSON, //   DBXJSON,
+  DBXJSON,
   IdHashSHA,
 //  IdSSLOpenSSL,
   qSysUtils,
@@ -2249,9 +2248,13 @@ procedure TClient.c03_ChatMessage;
 var
   i, fLevel:Integer;
   fType, fFrom, fText: string;
-  fJSON, fUsing, fValue:TlkJSONbase;
   fTask:ITask;
   fTaskEventChat:ITaskEventChat;
+
+  fJSON:TJSONObject;
+  fJPair:TJSONPair;
+  fJArray:TJSONArray;
+  fJValue:TJSONValue;
 begin
   fType := 'chat.type.announcement';
   fFrom := '';
@@ -2259,38 +2262,37 @@ begin
 
   if fServerVer >= 67 then begin
 
-    fJSON := TlkJSON.ParseText( fText );
+    fJSON := TJSONObject.ParseJSONValue(fText) as TJSONObject;
     try
       // Type
-      fValue := fJSON.Field['translate'];
-      if fValue <> nil then
-        fType := fValue.Value;
+      fJPair := fJSON.Get('translate');
+      if fJPair <> nil then
+        fType := fJPair.ToString;
 
       // using
-      fUsing := fJSON.Field['using'];
-      if fUsing <> nil then begin
-        // From
-        fValue := fUsing.Child[0];
-        if fValue <> nil then
-          fFrom := fValue.Value;
+      fJPair := fJSON.Get('using');
+      if fJPair <> nil then begin
+        fJArray := fJPair.JsonValue as TJSONArray;
 
-        fValue := fUsing.Child[1];
-
-        // Text
-        if fValue.Count = 0 then
-          fText := fValue.Value
-        else
-          fText := GenerateReadableText( fValue, fLevel );
+        case fJArray.Size of
+          1:
+            fText := fJArray.Get(1).Value;
+          2:begin
+            fFrom := fJArray.Get(0).Value;
+            fText := fJArray.Get(1).Value;
+          end;
+          else
+            fText := fJArray.ToString;
+        end;
       end
       // Text
       else begin
-        fValue := fJSON.Field['text'];
-        if fValue <> nil then
-          fText := fValue.Value;
+        fJPair := fJSON.Get('text');
+        if fJPair <> nil then
+          fText := fJPair.JsonValue.Value;
 
         OperateChatMsg(fText, fFrom, fType);
       end;
-
     finally
       fJSON.Free;
     end;
