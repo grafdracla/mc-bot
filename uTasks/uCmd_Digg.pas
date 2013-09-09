@@ -132,23 +132,21 @@ end;
 
 procedure TCmd_Digg.Event(Name, Data: string);
 var
-//  fJSON:TlkJSONBase;
+  fJSON:TJSONObject;
   val:string;
 begin
   // Set destanation
   if Name = 'cmd.digg.set' then begin
 
-    raise Exception.Create('@@@');
-(*
-    fJSON := TlkJSON.ParseText( Data );
+    fJSON := TJSONObject.ParseJSONValue(Data) as TJSONObject;
     try
       fAPos.X := 0;
       fAPos.Y := 0;
       fAPos.Z := 0;
 
       // Coord
-      if fJSON.Field['point'] <> nil then begin
-        val := fJSON.Field['point'].Value;
+      if fJSON.Get('point') <> nil then begin
+        val := fJSON.Get('point').JsonValue.Value;
 
         fAPos.X := StrToFloat( ExtractWord(1, val, [';']) );
         fAPos.Y := StrToFloat( ExtractWord(2, val, [';']) );
@@ -161,7 +159,6 @@ begin
     finally
       fJSON.Free;
     end;
-*)
   end
   //Set work
   else if Name = 'cmd.digg.work' then begin

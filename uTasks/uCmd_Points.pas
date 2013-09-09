@@ -72,34 +72,26 @@ begin
 end;
 
 procedure TCmd_Points.Event(Name, Data: string);
-//var
-//  fJSON {, fVal}:TlkJSONbase;
+var
+  fJSON {, fVal}:TJSONObject;
 begin
   // Add
   if name = 'cmd.points.add' then begin
-    raise Exception.Create('@@@');
-
-(*
-    fJSON := TlkJSON.ParseText( Data );
+    fJSON := TJSONObject.ParseJSONValue(Data) as TJSONObject;
     try
-      AddPoint( fJSON.Field['name'].Value );
+      AddPoint( fJSON.Get('name').JsonValue.Value );
     finally
       fJSON.Free;
     end;
-*)
   end
   // Del
   else if name = 'cmd.points.del' then begin
-    raise Exception.Create('@@@');
-
-(*
-    fJSON := TlkJSON.ParseText( Data );
+    fJSON := TJSONObject.ParseJSONValue(Data) as TJSONObject;
     try
-      DelPoint( fJSON.Field['name'].Value );
+      DelPoint( fJSON.Get('name').JsonValue.Value );
     finally
       fJSON.Free;
     end;
-*)
   end;
 end;
 
