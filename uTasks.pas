@@ -31,8 +31,9 @@ type
 implementation
 
 uses
-  uLkJSON,
-  Generics.Defaults;
+  Generics.Defaults,
+
+  DBXJSON;
 
 { TTasks }
 
@@ -68,19 +69,23 @@ end;
 
 procedure TTasks.Add(Task: ITask);
 var
-  fJSON:TlkJSONbase;
+  fJSON: TJSONObject;
+  fJItems: TJSONArray;
   i:Integer;
   fList:TList<ITask>;
   Data, fKey:string;
 begin
   Data := Task.GetInfo;
-  fJSON := TlkJSON.ParseText( Data );
+
+  //@@@
+(*
+  fJSON := TJSONObject.ParseJSONValue(Data) as TJSONObject;
   try
 
-    fJSON := fJSON.Field['events'];
-    if fJSON <> nil then
-      for i := 0 to fJSON.Count-1 do begin
-        fKey := fJSON.Child[i].Value;
+    fJItems := fJSON.Get('events').JsonValue as TJSONArray;
+    if fJItems <> nil then
+      for i := 0 to fJItems.Size-1 do begin
+        fKey := fJItems.Get(i).Value;
 
         // Get list
         if not fEvents.TryGetValue( fKey, fList ) then begin
@@ -95,6 +100,7 @@ begin
   finally
     fJSON.Free;
   end;
+*)
 
   inherited Add(Task);
 end;
