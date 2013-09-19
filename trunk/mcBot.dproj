@@ -64,10 +64,11 @@
 			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
-			<VerInfo_Build>6</VerInfo_Build>
+			<VerInfo_Release>77</VerInfo_Release>
+			<VerInfo_Build>1</VerInfo_Build>
 			<VerInfo_MinorVer>1</VerInfo_MinorVer>
 			<VerInfo_MajorVer>0</VerInfo_MajorVer>
-			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=0.1.0.6;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=0.1;Comments=</VerInfo_Keys>
+			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=0.1.77.1;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=0.1;Comments=</VerInfo_Keys>
 			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
 			<DCC_DcuOutput>.\$(Platform)\$(Config)</DCC_DcuOutput>
 			<VerInfo_Locale>1033</VerInfo_Locale>
@@ -163,7 +164,22 @@
 						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
-					<Excluded_Packages/>
+					<Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrx16.bpl">FastReport 4.0 Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxADO16.bpl">FastReport 4.0 ADO Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxBDE16.bpl">FastReport 4.0 BDE Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxDB16.bpl">FastReport 4.0 DB Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxDBX16.bpl">FastReport 4.0 DBX Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxe16.bpl">FastReport 4.0 Exports</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxIBX16.bpl">FastReport 4.0 IBX Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfrxTee16.bpl">(untitled)</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfs16.bpl">FastScript 1.9 Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfsADO16.bpl">FastScript 1.9 ADO Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfsBDE16.bpl">FastScript 1.9 BDE Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfsDB16.bpl">FastScript 1.9 DB Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfsIBX16.bpl">FastScript 1.9 IBX Components</Excluded_Packages>
+						<Excluded_Packages Name="F:\Work\Comps\FastReport 4\LibD16\dclfsTee16.bpl">FastScript 1.9 Tee Components</Excluded_Packages>
+					</Excluded_Packages>
 				</Delphi.Personality>
 				<Platforms>
 					<Platform value="Win64">False</Platform>
