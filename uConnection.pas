@@ -381,7 +381,9 @@ const
                    // 73     1.6.1
                    // 74     1.6.2
                    // 75     13w36a
-  cProtVerMax: Byte = 75;
+                   // 76     13w37b
+                   // 77     1.6.3
+  cProtVerMax: Byte = 76;
 
   cMaxVer = MaxByte;
 
@@ -2849,11 +2851,11 @@ begin
     fEntity.Pos := fPos;
 
     if fServerVer >= 50 then begin
-      // Yaw
-      fEntity.Yaw :=fIOHandler.ReadByte() * 360 div 256;
-
       // Pitch
       fEntity.Pitch := fIOHandler.ReadByte();
+
+      // Yaw
+      fEntity.Yaw :=fIOHandler.ReadByte() * 360 div 256;
     end;
 
     // FID
@@ -2864,13 +2866,6 @@ begin
       fIOHandler.ReadWord(); // X
       fIOHandler.ReadWord(); // Y
       fIOHandler.ReadWord(); // z
-    end;
-
-    case fFId of
-      // Falling Objects
-      70: raise Exception.Create('@@@ Falling Objects');
-      // Item frames
-      71: raise Exception.Create('@@@ Item frames');
     end;
 
     // @@@ Fireball
